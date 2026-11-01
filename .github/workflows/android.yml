@@ -23,7 +23,7 @@ jobs:
       - name: Install Capacitor
         run: |
           npm init -y
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 sharp
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/preferences@6 sharp
       - name: Create Android project
         run: |
           npx cap init "توازن" com.tawazon.app --web-dir=www
@@ -42,6 +42,144 @@ jobs:
           })();
           EOF2
           node icon.js
+      - name: Add home screen widget
+        run: |
+          J=android/app/src/main/java/com/tawazon/app
+          R=android/app/src/main/res
+          mkdir -p $R/layout $R/xml $R/drawable
+          cat > $J/TawazonWidget.java <<'EOF3'
+          package com.tawazon.app;
+
+          import android.app.PendingIntent;
+          import android.appwidget.AppWidgetManager;
+          import android.appwidget.AppWidgetProvider;
+          import android.content.ComponentName;
+          import android.content.Context;
+          import android.content.Intent;
+          import android.content.SharedPreferences;
+          import android.widget.RemoteViews;
+          import org.json.JSONObject;
+
+          public class TawazonWidget extends AppWidgetProvider {
+            @Override
+            public void onUpdate(Context c, AppWidgetManager m, int[] ids) {
+              for (int id : ids) update(c, m, id);
+            }
+
+            static void refreshAll(Context c) {
+              AppWidgetManager m = AppWidgetManager.getInstance(c);
+              int[] ids = m.getAppWidgetIds(new ComponentName(c, TawazonWidget.class));
+              for (int id : ids) update(c, m, id);
+            }
+
+            static void update(Context c, AppWidgetManager m, int id) {
+              RemoteViews v = new RemoteViews(c.getPackageName(), R.layout.widget_tawazon);
+              String left = "--", lbl1 = "", water = "", lbl2 = "";
+              int pct = 0;
+              try {
+                SharedPreferences p = c.getSharedPreferences("CapacitorStorage", Context.MODE_PRIVATE);
+                String s = p.getString("tz_widget", null);
+                if (s != null) {
+                  JSONObject o = new JSONObject(s);
+                  left = String.valueOf(o.optInt("l"));
+                  lbl1 = o.optString("a");
+                  int t = o.optInt("t"), e = o.optInt("e");
+                  pct = t > 0 ? Math.min(100, e * 100 / t) : 0;
+                  water = o.optInt("w") + " / " + o.optInt("wt");
+                  lbl2 = o.optString("b");
+                }
+              } catch (Exception ex) { }
+              v.setTextViewText(R.id.w_left, left);
+              v.setTextViewText(R.id.w_lbl, lbl1);
+              v.setProgressBar(R.id.w_bar, 100, pct, false);
+              v.setTextViewText(R.id.w_water, water + " " + lbl2);
+              Intent i = new Intent(c, MainActivity.class);
+              PendingIntent pi = PendingIntent.getActivity(c, 0, i, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+              v.setOnClickPendingIntent(R.id.w_root, pi);
+              m.updateAppWidget(id, v);
+            }
+          }
+          EOF3
+          cat > $J/MainActivity.java <<'EOF4'
+          package com.tawazon.app;
+
+          import com.getcapacitor.BridgeActivity;
+
+          public class MainActivity extends BridgeActivity {
+            @Override
+            public void onPause() {
+              super.onPause();
+              try { TawazonWidget.refreshAll(this); } catch (Exception e) { }
+            }
+          }
+          EOF4
+          cat > $R/layout/widget_tawazon.xml <<'EOF5'
+          <?xml version="1.0" encoding="utf-8"?>
+          <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+              android:id="@+id/w_root"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:gravity="center"
+              android:padding="14dp"
+              android:background="@drawable/widget_bg">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="توازن"
+                android:textColor="#9EF08F"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/w_left"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="--"
+                android:textColor="#F2994F"
+                android:textSize="34sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/w_lbl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="#CFE8CB"
+                android:textSize="12sp" />
+            <ProgressBar
+                android:id="@+id/w_bar"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="6dp"
+                android:max="100"
+                android:progress="0" />
+            <TextView
+                android:id="@+id/w_water"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:textColor="#E7F6E4"
+                android:textSize="13sp" />
+          </LinearLayout>
+          EOF5
+          cat > $R/xml/tawazon_widget_info.xml <<'EOF6'
+          <?xml version="1.0" encoding="utf-8"?>
+          <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+              android:minWidth="180dp"
+              android:minHeight="110dp"
+              android:updatePeriodMillis="1800000"
+              android:initialLayout="@layout/widget_tawazon"
+              android:resizeMode="horizontal|vertical"
+              android:widgetCategory="home_screen" />
+          EOF6
+          cat > $R/drawable/widget_bg.xml <<'EOF7'
+          <?xml version="1.0" encoding="utf-8"?>
+          <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+            <solid android:color="#022F28" />
+            <corners android:radius="22dp" />
+          </shape>
+          EOF7
+          sed -i 's#</application>#<receiver android:name=".TawazonWidget" android:exported="true"><intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter><meta-data android:name="android.appwidget.provider" android:resource="@xml/tawazon_widget_info" /></receiver></application>#' android/app/src/main/AndroidManifest.xml
+          grep -c TawazonWidget android/app/src/main/AndroidManifest.xml
           npx cap sync android
       - name: Build APK
         working-directory: android
