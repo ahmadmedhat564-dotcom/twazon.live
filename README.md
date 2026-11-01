@@ -14,3 +14,6 @@ A bilingual (AR/EN) PWA: daily plan, food logging with custom foods, animated wo
 ## ملاحظات / Notes
 - الحسابات وبيانات المستخدم محفوظة في `localStorage` على الجهاز فقط، وهي ليست نظام تسجيل دخول آمن.
 - الخطوط: Cairo للعربي وMontserrat للإنجليزي (من Google Fonts).
+
+## بناء ملف APK
+Actions ← Build Android APK ← Run workflow، وبعد ما يخلص نزّل tawazon-apk من Artifacts.
