@@ -6,9 +6,9 @@
 <title>توازن</title><meta name="theme-color" content="#022f28"><link rel="manifest" href="manifest.webmanifest"><link rel="icon" href="icons/icon-192.png"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;800&family=Montserrat:wght@400;600;800&display=swap" rel="stylesheet">
 <style>
-:root{--ff:Cairo,Tahoma,sans-serif;--bg:#f2f5ef;--card:#fff;--ink:#1d2a22;--mut:#667268;--ac:#3b7a4b;--ac2:#e8833a;--ln:#dde4d9;--soft:#e6efe2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+:root{--ff:Cairo,Tahoma,sans-serif;--bg:#f2f5ef;--card:#fff;--ink:#1d2a22;--mut:#667268;--ac:#3b7a4b;--ac2:#e8833a;--ln:#dde4d9;--soft:#e6efe2;box-sizing:border-box}
 @media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141a16;--card:#1d261f;--ink:#ecf2ea;--mut:#9aa89c;--ac:#6cc27f;--ac2:#f2994f;--ln:#2d3a30;--soft:#243228;color-scheme:dark}}
-*{box-sizing:border-box}
+*{box-sizing:border-box}html,body{overflow-x:hidden;width:100%}.row>*{min-width:0}input,select{min-width:0;max-width:100%}input[type=time]{-webkit-appearance:none;appearance:none}
 body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.6 var(--ff);max-width:480px;margin:auto;padding-bottom:84px}
 h1{font-size:26px;font-weight:800;margin:0;display:inline-block;border-bottom:4px solid var(--ac2)}h2{font-size:19px;font-weight:800;margin:20px 0 8px}
 .w{padding:16px}.card{background:var(--card);border:1px solid var(--ln);border-radius:14px;padding:14px;margin:10px 0}
@@ -60,7 +60,7 @@ function tm(s){var a=s.split(':');return +a[0]*60+ +a[1]}
 function ft(m){m=((m%1440)+1440)%1440;var h=Math.floor(m/60),n=m%60,ap=S.lang=='en'?(h>=12?'PM':'AM'):(h>=12?'م':'ص');h=h%12||12;return h+':'+(n<10?'0':'')+n+' '+ap}
 function chips(k,opts,multi){return '<div class="chips">'+opts.map(function(o){var on=multi?S.p[k].indexOf(o[0])>-1:S.p[k]===o[0];return '<button class="chip'+(on?' on':'')+'" onclick="pick(\''+k+'\',\''+o[0]+'\','+!!multi+')">'+o[1]+'</button>'}).join('')+'</div>'}
 function pick(k,v,m){if(m){var i=S.p[k].indexOf(v);i>-1?S.p[k].splice(i,1):S.p[k].push(v)}else S.p[k]=v;read();render()}
-function inp(k,l,t){return '<label>'+l+'</label><input type="'+(t||'number')+'" data-k="'+k+'" value="'+S.p[k]+'">'}
+function inp(k,l,t){return '<div><label>'+l+'</label><input type="'+(t||'number')+'" data-k="'+k+'" value="'+S.p[k]+'"></div>'}
 function read(){document.querySelectorAll('[data-k]').forEach(function(e){S.p[e.dataset.k]=e.type==='number'?+e.value:e.value})}
 var STEPS=['عنك','مواعيدك','الرياضة','الأكل'];
 function form(){
