@@ -23,12 +23,25 @@ jobs:
       - name: Install Capacitor
         run: |
           npm init -y
-          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 @capacitor/assets
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6 sharp
       - name: Create Android project
         run: |
           npx cap init "توازن" com.tawazon.app --web-dir=www
           npx cap add android
-          npx capacitor-assets generate --android --iconBackgroundColor "#022f28" --iconBackgroundColorDark "#022f28" || true
+      - name: Set app icon
+        run: |
+          cat > icon.js <<'EOF2'
+          const sharp = require('sharp'), fs = require('fs');
+          const res = 'android/app/src/main/res';
+          fs.rmSync(res + '/mipmap-anydpi-v26', { recursive: true, force: true });
+          const sizes = { mdpi: 48, hdpi: 72, xhdpi: 96, xxhdpi: 144, xxxhdpi: 192 };
+          (async () => {
+            for (const [d, s] of Object.entries(sizes))
+              for (const n of ['ic_launcher', 'ic_launcher_round', 'ic_launcher_foreground'])
+                await sharp('icons/icon-512.png').resize(s, s).toFile(res + '/mipmap-' + d + '/' + n + '.png');
+          })();
+          EOF2
+          node icon.js
           npx cap sync android
       - name: Build APK
         working-directory: android
